@@ -72,8 +72,9 @@ def success():
     """ % (FROM, ", ".join(TO), SUBJECT, TEXT)
 
     try:
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server = smtplib.SMTP('smtp.gmail.com', 587)
         server.ehlo()
+        server.starttls()
         server.login(gmail_user, gmail_password)
 
         print("Email logged in")
