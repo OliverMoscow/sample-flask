@@ -1,15 +1,18 @@
+from didkit import generateEd25519Key
+from workos import client as workos_client
+from flask import Flask, jsonify, render_template, request, redirect
+from issue_credential import issueCredential
+import json
+import errno
+import didkit
+import stripe
 import os
+import sys
+import smtplib
 from dotenv import load_dotenv
 
 load_dotenv()
 
-import stripe
-import didkit
-import errno
-import json
-from issue_credential import issueCredential
-from flask import Flask, jsonify, render_template, request
-from didkit import generateEd25519Key
 
 app = Flask(__name__)
 
@@ -37,6 +40,43 @@ def index():
 @app.route("/success")
 def success():
     credential = json.dumps(issueCredential(request), indent=2, sort_keys=True)
+
+    # workos magic link w/ flask email
+    # email = credential.credentialSubject["@context"][0].email
+    print(credential, file=sys.stderr)
+    credential = json.loads(credential)
+    email = credential['credentialSubject']['email']   
+    print(email, file=sys.stderr)
+    session = workos_client.passwordless.create_session(
+        {'email': email, 'type': 'MagicLink'}
+    )
+
+    # Send a custom email using your own service
+    gmail_user = 'omoscow15@gmail.com'
+    gmail_password = 'Omoscow2017'
+
+    FROM = "omoscow15@gmail.com"
+    TO = [email]
+    SUBJECT = "HEI of ONE login link"
+    TEXT = session['link']
+    message = """\
+    From: %s
+    To: %s
+    Subject: %s
+
+    %s
+    """ % (FROM, ", ".join(TO), SUBJECT, TEXT)
+
+    try:
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.ehlo()
+        server.login(gmail_user, gmail_password)
+        server.sendmail(FROM, TO, message)
+        server.close()
+
+        print("Email sent!")
+    except:
+        print('Something went wrong...')
 
     return render_template('credential.html', credential=credential, didkit_version=didkit.getVersion())
 
@@ -86,6 +126,19 @@ def create_checkout_session():
         return jsonify({"sessionId": checkout_session["id"]})
     except Exception as e:
         return jsonify(error=str(e)), 403
+
+
+# workos magic link auth
+@app.route('/callback')
+def callback():
+    code = request.args.get('code')
+    print(code)
+    profile_and_token = workos_client.sso.get_profile_and_token(code)
+
+    # Use the information in `profile` for further business logic.
+    profile = profile_and_token.profile
+    print(profile)
+    return jsonify({"status": "success", "user": profile})
 
 
 if __name__ == 'app':
