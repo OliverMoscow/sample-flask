@@ -24,6 +24,10 @@ stripe_keys = {
 stripe_prices = {
     "subscription": os.environ["SUBSCRIPTION_PRICE_ID"],
 }
+gmail_login = {
+    "email": os.environ["GMAIL_EMAIL"],
+    "password": os.environ["GMAIL_PASSWORD"]
+}
 
 # print(stripe.Plan.list(limit=3))
 #
@@ -52,10 +56,10 @@ def success():
     )
 
     # Send a custom email using your own service
-    gmail_user = 'omoscow15@gmail.com'
-    gmail_password = 'Omoscow2017'
+    gmail_user = gmail_login["email"]
+    gmail_password = gmail_login["password"]
 
-    FROM = "omoscow15@gmail.com"
+    FROM = gmail_user
     TO = [email]
     SUBJECT = "HEI of ONE login link"
     TEXT = session['link']
@@ -71,6 +75,12 @@ def success():
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.ehlo()
         server.login(gmail_user, gmail_password)
+
+        print("Email logged in")
+    except:
+        print('Something went wrong...')
+
+    try:
         server.sendmail(FROM, TO, message)
         server.close()
 
