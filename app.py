@@ -10,8 +10,10 @@ import os
 import sys
 import smtplib
 from dotenv import load_dotenv
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
+# from email.mime.multipart import MIMEMultipart
+# from email.mime.text import MIMEText
 
 load_dotenv()
 
@@ -59,37 +61,6 @@ def success():
 
     # Send a custom email using your own service
     sendEmail(session['link'], email)
-    # gmail_user = gmail_login["email"]
-    # gmail_password = gmail_login["password"]
-
-    # FROM = gmail_user
-    # TO = [email]
-    # SUBJECT = "HEI of ONE login link"
-    # TEXT = session['link']
-    # message = """\
-    # From: %s
-    # To: %s
-    # Subject: %s
-
-    # %s
-    # """ % (FROM, ", ".join(TO), SUBJECT, TEXT)
-
-    # try:
-    #     server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-    #     server.ehlo()
-    #     server.login(gmail_user, gmail_password)
-
-    #     print("Email logged in")
-    # except:
-    #     print('Something went wrong...')
-
-    # try:
-    #     server.sendmail(FROM, TO, message)
-    #     server.close()
-
-    #     print("Email sent!")
-    # except:
-    #     print('Something went wrong...')
 
     return render_template('credential.html', credential=credential, didkit_version=didkit.getVersion())
 
@@ -168,23 +139,36 @@ if __name__ == 'app':
             file_obj.write(generateEd25519Key())
 
 def sendEmail(body,address):
-    mail_content = body
-    #The mail addresses and password
-    sender_address = gmail_login["email"]
-    sender_pass = gmail_login["password"]
-    receiver_address = address
-    #Setup the MIME
-    message = MIMEMultipart()
-    message['From'] = sender_address
-    message['To'] = receiver_address
-    message['Subject'] = 'HEI of ONE login link'   #The subject line
-    #The body and the attachments for the mail
-    message.attach(MIMEText(mail_content, 'plain'))
-    #Create SMTP session for sending the mail
-    session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
-    session.starttls() #enable security
-    session.login(sender_address, sender_pass) #login with mail_id and password
-    text = message.as_string()
-    session.sendmail(sender_address, receiver_address, text)
-    session.quit()
-    print('Mail Sent')
+    message = Mail(
+    from_email='omoscow15@gmail.com',
+    to_emails= address,
+    subject='HEI OF ONE Login Link',
+    html_content=body)
+    try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        response = sg.send(message)
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
+    except Exception as e:
+        print(e.message)
+    # mail_content = body
+    # #The mail addresses and password
+    # sender_address = gmail_login["email"]
+    # sender_pass = gmail_login["password"]
+    # receiver_address = address
+    # #Setup the MIME
+    # message = MIMEMultipart()
+    # message['From'] = sender_address
+    # message['To'] = receiver_address
+    # message['Subject'] = 'HEI of ONE login link'   #The subject line
+    # #The body and the attachments for the mail
+    # message.attach(MIMEText(mail_content, 'plain'))
+    # #Create SMTP session for sending the mail
+    # session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
+    # session.starttls() #enable security
+    # session.login(sender_address, sender_pass) #login with mail_id and password
+    # text = message.as_string()
+    # session.sendmail(sender_address, receiver_address, text)
+    # session.quit()
+    # print('Mail Sent')

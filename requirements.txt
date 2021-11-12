@@ -23,3 +23,5 @@ setuptools==41.2.0
 urllib3==1.26.4
 didkit==0.2.1
 workos==1.5.1
+sendgrid==6.9.0
+
