@@ -51,7 +51,6 @@ def success():
 
     # workos magic link w/ flask email
     # email = credential.credentialSubject["@context"][0].email
-    print(credential, file=sys.stderr)
     credential = json.loads(credential)
     email = credential['credentialSubject']['email']   
     print(email, file=sys.stderr)
@@ -139,36 +138,19 @@ if __name__ == 'app':
             file_obj.write(generateEd25519Key())
 
 def sendEmail(body,address):
+    #pylint: disable=no-member
+    key = os.environ.get('SENDGRID_API_KEY')
+    print(key, file=sys.stderr)
     message = Mail(
-    from_email='omoscow15@gmail.com',
+    from_email='support@hieofone.com',
     to_emails= address,
     subject='HEI OF ONE Login Link',
     html_content=body)
     try:
-        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        sg = SendGridAPIClient(key)
         response = sg.send(message)
         print(response.status_code)
         print(response.body)
         print(response.headers)
     except Exception as e:
         print(e.message)
-    # mail_content = body
-    # #The mail addresses and password
-    # sender_address = gmail_login["email"]
-    # sender_pass = gmail_login["password"]
-    # receiver_address = address
-    # #Setup the MIME
-    # message = MIMEMultipart()
-    # message['From'] = sender_address
-    # message['To'] = receiver_address
-    # message['Subject'] = 'HEI of ONE login link'   #The subject line
-    # #The body and the attachments for the mail
-    # message.attach(MIMEText(mail_content, 'plain'))
-    # #Create SMTP session for sending the mail
-    # session = smtplib.SMTP('smtp.gmail.com', 587) #use gmail with port
-    # session.starttls() #enable security
-    # session.login(sender_address, sender_pass) #login with mail_id and password
-    # text = message.as_string()
-    # session.sendmail(sender_address, receiver_address, text)
-    # session.quit()
-    # print('Mail Sent')
