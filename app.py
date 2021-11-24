@@ -28,10 +28,6 @@ stripe_keys = {
 stripe_prices = {
     "subscription": os.environ["SUBSCRIPTION_PRICE_ID"],
 }
-gmail_login = {
-    "email": os.environ["GMAIL_EMAIL"],
-    "password": os.environ["GMAIL_PASSWORD"]
-}
 
 # print(stripe.Plan.list(limit=3))
 #
