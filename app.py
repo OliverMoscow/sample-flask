@@ -118,7 +118,7 @@ def callback():
 
     # Use the information in `profile` for further business logic.
     profile = profile_and_token.profile
-    print("profile: " + profile)
+    # print("profile: " + profile)
     # return jsonify({"status": "success", "user": profile.raw_attributes})
     return redirect('/')
 
