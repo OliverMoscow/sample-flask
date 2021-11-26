@@ -12,6 +12,7 @@ import smtplib
 from dotenv import load_dotenv
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+
 # from email.mime.multipart import MIMEMultipart
 # from email.mime.text import MIMEText
 
@@ -46,7 +47,6 @@ def success():
     credential = json.dumps(issueCredential(request), indent=2, sort_keys=True)
 
     # workos magic link w/ flask email
-    # email = credential.credentialSubject["@context"][0].email
     credential = json.loads(credential)
     email = credential['credentialSubject']['email']   
     print(email, file=sys.stderr)
@@ -54,8 +54,11 @@ def success():
         {'email': email, 'type': 'MagicLink'}
     )
 
-    # Send a custom email using your own service
-    sendEmail(session['link'], email)
+    ## Send a custom email using sendgrid
+    # sendEmail(session['link'], email)
+
+    ## Send email using workos
+    workos_client.passwordless.send_session(session['id'])
 
     return render_template('credential.html', credential=credential, didkit_version=didkit.getVersion())
 
@@ -106,18 +109,18 @@ def create_checkout_session():
     except Exception as e:
         return jsonify(error=str(e)), 403
 
-
 # workos magic link auth
 @app.route('/callback')
 def callback():
     code = request.args.get('code')
-    print(code)
+    print("code: " + code)
     profile_and_token = workos_client.sso.get_profile_and_token(code)
 
     # Use the information in `profile` for further business logic.
     profile = profile_and_token.profile
-    print(profile)
-    return jsonify({"status": "success", "user": profile})
+    print("profile: " + profile)
+    # return jsonify({"status": "success", "user": profile.raw_attributes})
+    return redirect('/')
 
 
 if __name__ == 'app':
@@ -132,6 +135,7 @@ if __name__ == 'app':
     else:
         with os.fdopen(file_handle, 'w') as file_obj:
             file_obj.write(generateEd25519Key())
+
 
 def sendEmail(body,address):
     #pylint: disable=no-member
