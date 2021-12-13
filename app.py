@@ -35,11 +35,45 @@ stripe_prices = {
 stripe.api_key = stripe_keys["secret_key"]
 
 
-@app.route("/")
+@app.route('/')
 def index():
     domain = request.url_root.split(
         "https://")[-1].split("http://")[-1].replace("/", "")
     return render_template("index.html", domain=domain, didkit_version=didkit.getVersion())
+
+
+@app.route("/", methods=['POST'])
+def index_post():
+    email = request.form['email']
+    return redirect(f'/signIn/{email}')
+
+
+@app.route('/new-patient', methods=['POST', 'GET'])
+def new_patient():
+    if request.method == 'POST':
+        if request.form.get('privacy'):
+            email = request.form['email']
+            return redirect(f'/signIn/{email}')
+    return render_template('new-patient.html')
+
+
+@app.route('/signIn/<email>')
+def signIn(email):
+
+    session = workos_client.passwordless.create_session(
+        {'email': email, 'type': 'MagicLink'}
+    )
+    # Send a custom email using sendgrid
+    # sendEmail(session['link'], email)
+
+    # Send email using workos
+    workos_client.passwordless.send_session(session['id'])
+    return render_template('send-link.html', email=email)
+
+
+@app.route('/manage-account')
+def manageAccount():
+    return render_template('manage-account.html')
 
 
 @app.route("/success")
@@ -48,19 +82,9 @@ def success():
 
     # workos magic link w/ flask email
     credential = json.loads(credential)
-    email = credential['credentialSubject']['email']   
-    print(email, file=sys.stderr)
-    session = workos_client.passwordless.create_session(
-        {'email': email, 'type': 'MagicLink'}
-    )
-
-    ## Send a custom email using sendgrid
-    # sendEmail(session['link'], email)
-
-    ## Send email using workos
-    workos_client.passwordless.send_session(session['id'])
-
-    return render_template('credential.html', credential=credential, didkit_version=didkit.getVersion())
+    email = credential['credentialSubject']['email']
+    print(f'sentEmail: {email}', file=sys.stderr)
+    return redirect(f'/signIn/{email}')
 
 
 @app.route("/cancelation")
@@ -110,6 +134,8 @@ def create_checkout_session():
         return jsonify(error=str(e)), 403
 
 # workos magic link auth
+
+
 @app.route('/callback')
 def callback():
     code = request.args.get('code')
@@ -120,7 +146,7 @@ def callback():
     profile = profile_and_token.profile
     # print("profile: " + profile)
     # return jsonify({"status": "success", "user": profile.raw_attributes})
-    return redirect('/')
+    return redirect('/manage-account')
 
 
 if __name__ == 'app':
@@ -137,15 +163,15 @@ if __name__ == 'app':
             file_obj.write(generateEd25519Key())
 
 
-def sendEmail(body,address):
+def sendEmail(body, address):
     #pylint: disable=no-member
     key = os.environ.get('SENDGRID_API_KEY')
     print(key, file=sys.stderr)
     message = Mail(
-    from_email='support@hieofone.com',
-    to_emails= address,
-    subject='HEI OF ONE Login Link',
-    html_content=body)
+        from_email='support@hieofone.com',
+        to_emails=address,
+        subject='HEI OF ONE Login Link',
+        html_content=body)
     try:
         sg = SendGridAPIClient(key)
         response = sg.send(message)
