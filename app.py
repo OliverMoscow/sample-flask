@@ -16,7 +16,7 @@ from sendgrid.helpers.mail import Mail
 # from email.mime.multipart import MIMEMultipart
 # from email.mime.text import MIMEText
 
-# $ export FLASK_APP=hello
+# $ export FLASK_APP=app
 # $ flask run
 #  * Running on http://127.0.0.1:5000/
 
